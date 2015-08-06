@@ -176,8 +176,6 @@ char Adafruit_GPS::read(void) {
     c = gpsHwSerial->read();
   }
 
-  //Serial.print(c);
-
   if (c == '$') {
     currentline[lineidx] = 0;
     lineidx = 0;
@@ -193,9 +191,6 @@ char Adafruit_GPS::read(void) {
       lastline = line2;
     }
 
-    //Serial.println("----");
-    //Serial.println((char *)lastline);
-    //Serial.println("----");
     lineidx = 0;
     recvdflag = true;
   }
