@@ -3,6 +3,8 @@
 #include <math.h>
 #include "Adafruit_Sensor.h"
 #include "Adafruit_BME280.h"
+#include "application.h"
+#include "SD.h"
 
 // GPS
 #define mySerial Serial1
@@ -15,6 +17,18 @@ byte bufferIndex = 0;
 char buffer[65];
 char c;
 
+// SD Card
+// SOFTWARE SPI pin configuration - modify as required
+// The default pins are the same as HARDWARE SPI
+const uint8_t chipSelect = A2;    // Also used for HARDWARE SPI setup
+const uint8_t mosiPin = A5;
+const uint8_t misoPin = A4;
+const uint8_t clockPin = A3;
+
+char dataString[100];
+char sdata[10];
+
+
 // Environmental sensor
 Adafruit_BME280 bme; // I2C
 
@@ -23,6 +37,19 @@ uint32_t timer;
 
 
 void setup() {
+  Serial.begin(115200);
+  // SD Card
+  // Wait for key, for debug reasons
+  while (!Serial.available()) SPARK_WLAN_Loop();
+
+  Serial.print("Initializing SD card...");
+
+  // see if the card is present and can be initialized:
+  if (!SD.begin(chipSelect)) {
+    Serial.println("Card failed, or not present");
+    // don't do anything more:
+  }
+
   // Setup GPS Module
   GPS.begin(9600);  // Initialize GPS lib
   mySerial.begin(9600);  // Hardware serial port
@@ -58,6 +85,21 @@ void loop() {
   if (timer > millis())  timer = millis();
   if (millis() - timer > 10000) {
     timer = millis();
+
+    // open the file. note that only one file can be open at a time,
+    // so you have to close this one before opening another.
+    File dataFile = SD.open("datalog.txt", FILE_WRITE);
+
+    // if the file is available, write to it:
+    if (dataFile) {
+      dataFile.println("Ich bin das Log");
+      dataFile.close();
+    }
+    // if the file isn't open, pop up an error:
+    else {
+      Serial.println("error opening datalog.txt");
+    }
+
 
     if (GPS.fix) {
       Spark.publish("GPS",
