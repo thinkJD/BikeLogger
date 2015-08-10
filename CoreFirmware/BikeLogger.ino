@@ -44,11 +44,11 @@ void setup() {
 
   Serial.print("Initializing SD card...");
 
+
   // see if the card is present and can be initialized:
-  if (!SD.begin(chipSelect)) {
-    Serial.println("Card failed, or not present");
-    // don't do anything more:
-  }
+  if (!SD.begin(chipSelect)) Serial.println("Card failed, or not present");
+  else Serial.println("Cart initialized :)");
+
 
   // Setup GPS Module
   GPS.begin(9600);  // Initialize GPS lib
