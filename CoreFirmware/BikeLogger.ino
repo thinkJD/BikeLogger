@@ -28,27 +28,19 @@ const uint8_t clockPin = A3;
 char dataString[100];
 char sdata[10];
 
-
 // Environmental sensor
 Adafruit_BME280 bme; // I2C
 
 // application
 uint32_t timer;
-
+OneButton()
 
 void setup() {
   Serial.begin(115200);
-  // SD Card
-  // Wait for key, for debug reasons
-  while (!Serial.available()) SPARK_WLAN_Loop();
-
-  Serial.print("Initializing SD card...");
-
-
-  // see if the card is present and can be initialized:
-  if (!SD.begin(chipSelect)) Serial.println("Card failed, or not present");
-  else Serial.println("Cart initialized :)");
-
+  // Setup SD Card
+  if (!SD.begin(chipSelect))
+    Spark.publish("SD", "Card failed, or not present", 60, PRIVATE);
+  else Spark.publish("SD", "Cart initialized :)", 60, PRIVATE);
 
   // Setup GPS Module
   GPS.begin(9600);  // Initialize GPS lib
@@ -65,6 +57,7 @@ void setup() {
 
   // other
   timer = millis();
+  attachInterrupt(D4, TrackUpdate, RISING);  // D4 = GPS Pulse per sec if fix
   Spark.publish("App", "{ status: \"started up! "+String(APP_VERSION)+"\"}", 60, PRIVATE );
   IPAddress myIP = WiFi.localIP();
   Spark.publish("IP", String(myIP[0]) + "."
@@ -76,30 +69,13 @@ void setup() {
 
 void loop() {
   while (mySerial.available() > 0) char c = GPS.read();
-
   // Get and parse last GPS sentence. If it fails, wait for the next one
   if (GPS.newNMEAreceived())
     if (!GPS.parse(GPS.lastNMEA())) return;
 
-  // approximately every 2 seconds or so, print out the current stats
   if (timer > millis())  timer = millis();
   if (millis() - timer > 10000) {
     timer = millis();
-
-    // open the file. note that only one file can be open at a time,
-    // so you have to close this one before opening another.
-    File dataFile = SD.open("datalog.txt", FILE_WRITE);
-
-    // if the file is available, write to it:
-    if (dataFile) {
-      dataFile.println("Ich bin das Log");
-      dataFile.close();
-    }
-    // if the file isn't open, pop up an error:
-    else {
-      Serial.println("error opening datalog.txt");
-    }
-
 
     if (GPS.fix) {
       Spark.publish("GPS",
@@ -121,6 +97,10 @@ void loop() {
       Spark.publish("GPS", "{Status: }", 60, PRIVATE);
     }
 
+    // check wlan every minute
+    if (millis() - timer > 60000) { }
+
+
     Spark.publish("ENV",
       "{Temperature: " + String(bme.readTemperature()) + " *C"
         + ", Humidity: " + String(bme.readHumidity()) + " %"
@@ -130,7 +110,39 @@ void loop() {
   }
 }
 
+bool tracking = true;
+
+void TrackUpdate() {
+  if (tracking) {
+    Spark.publish("SYS", "Tracking", 60, PRIVATE);
+    File trackLog = SD.open("trackLog.log", FILE_WRITE);
+    if (trackLog) {
+      // Timestamp
+      trackLog.print(GPS.day, DEC); trackLog.print('.');
+      trackLog.print(GPS.month, DEC); trackLog.print('.');
+      trackLog.print(GPS.year, DEC); trackLog.print(' ');
+      trackLog.print(GPS.hour, DEC); trackLog.print(':');
+      trackLog.print(GPS.minute, DEC); trackLog.print(':');
+      trackLog.print(GPS.seconds, DEC); trackLog.print('.');
+      trackLog.print(GPS.milliseconds); trackLog.print(';');
+      // GPS data
+      trackLog.print(GPS.fixquality, DEC); trackLog.print(';');
+      trackLog.print(GPS.latitude, 4); trackLog.print(GPS.lat);
+      trackLog.print(GPS.longitude, 4); trackLog.print(GPS.lon);
+      trackLog.print(GPS.speed); trackLog.print(';');
+      trackLog.print(GPS.altitude); trackLog.print(';');
+      trackLog.print((int)GPS.satellites); trackLog.print(';');
+      // Environmelntal data
+      trackLog.print(bme.readTemperature()); trackLog.print(';');
+      trackLog.print(bme.readHumidity()); trackLog.print(';');
+      trackLog.print(bme.readPressure()); trackLog.println(';');
+      trackLog.close();
+    }
+  }
+}
+
 // Utils
+
 
 //http://arduinodev.woofex.net/2013/02/06/adafruit_gps_forma/
 double convertDegMinToDecDeg (float degMin) {
