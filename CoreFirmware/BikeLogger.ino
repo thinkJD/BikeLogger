@@ -4,6 +4,7 @@
 #include "Adafruit_Sensor.h"
 #include "Adafruit_BME280.h"
 #include "application.h"
+#include "OneButton.h"
 #include "SD.h"
 
 // GPS
@@ -27,15 +28,24 @@ const uint8_t clockPin = A3;
 
 char dataString[100];
 char sdata[10];
+char logLine[300];
 
 // Environmental sensor
 Adafruit_BME280 bme; // I2C
 
+OneButton button(D7, true);
+
 // application
 uint32_t timer;
-OneButton()
+volatile bool tracking = true;
+volatile bool writing = false;
 
+//SYSTEM_MODE(MANUAL);  // allows controll over the cloud functions
 void setup() {
+//  Spark.connect();
+//  button.attachPress(longClickHandler);
+//  button.attachDoubleClick(doubleClickHandler);
+//  button.attachClick(singleClickHandler);
   Serial.begin(115200);
   // Setup SD Card
   if (!SD.begin(chipSelect))
@@ -57,6 +67,7 @@ void setup() {
 
   // other
   timer = millis();
+  pinMode(D4, INPUT_PULLDOWN);
   attachInterrupt(D4, TrackUpdate, RISING);  // D4 = GPS Pulse per sec if fix
   Spark.publish("App", "{ status: \"started up! "+String(APP_VERSION)+"\"}", 60, PRIVATE );
   IPAddress myIP = WiFi.localIP();
@@ -68,53 +79,63 @@ void setup() {
 
 
 void loop() {
-  while (mySerial.available() > 0) char c = GPS.read();
-  // Get and parse last GPS sentence. If it fails, wait for the next one
-  if (GPS.newNMEAreceived())
-    if (!GPS.parse(GPS.lastNMEA())) return;
-
+  // reset timer at overflow
   if (timer > millis())  timer = millis();
+  // opdate button object
+//  button.tick();
+
+//  if (Spark.connected()) {
+//    Spark.process();
+//  }
+
+  // execute every 10 sec
   if (millis() - timer > 10000) {
     timer = millis();
-
-    if (GPS.fix) {
-      Spark.publish("GPS",
-          + "{ quality: " + String(GPS.fixquality)
-          + ", satelites: " + String((int)GPS.satellites)
-          + " }",
-        60, PRIVATE );
-
-      Spark.publish("GPS",
-        "{lat: " + String(convertDegMinToDecDeg(GPS.latitude))
-          + ", lon: -" + String(convertDegMinToDecDeg(GPS.longitude))
-          + ", a: " + String(GPS.altitude)
-          + ", s: " + String(GPS.speed)
-          + " }",
-        60, PRIVATE );
-    }
-    else {
-      Spark.publish("GPS", "{ Error: No GPS Fix }", 60, PRIVATE );
-      Spark.publish("GPS", "{Status: }", 60, PRIVATE);
-    }
-
-    // check wlan every minute
-    if (millis() - timer > 60000) { }
-
-
-    Spark.publish("ENV",
-      "{Temperature: " + String(bme.readTemperature()) + " *C"
-        + ", Humidity: " + String(bme.readHumidity()) + " %"
-        + ", Pressure: " + String(bme.readPressure()) + " hp"
-        +  "}",
-      60, PRIVATE );
+    publishStatus();
   }
+
+  // Get and parse last GPS sentence. If it fails, wait for the next one
+  while (mySerial.available() > 0) char c = GPS.read();
+  if (GPS.newNMEAreceived())
+    if (!GPS.parse(GPS.lastNMEA())) return;
 }
 
-bool tracking = true;
+void startNewTrack() {
+  // get file count
+  // create new file
+  // write first record
+}
+
+void publishStatus() {
+  if (GPS.fix) {
+    Spark.publish("GPS",
+      "{ quality: " + String(GPS.fixquality)
+      + ", satelites: " + String((int)GPS.satellites)
+      + " }", 60, PRIVATE );
+
+    Spark.publish("GPS",
+      "{lat: " + String(convertDegMinToDecDeg(GPS.latitude))
+      + ", lon: -" + String(convertDegMinToDecDeg(GPS.longitude))
+      + ", a: " + String(GPS.altitude)
+      + ", s: " + String(GPS.speed)
+      + " }", 60, PRIVATE );
+    }
+  else {
+    Spark.publish("GPS", "{ Error: No GPS Fix }", 60, PRIVATE );
+    Spark.publish("GPS", "{ satellites: " + String(GPS.satellites) + " }", 60, PRIVATE);
+  }
+
+  Spark.publish("ENV",
+    "{Temperature: " + String(bme.readTemperature()) + " *C"
+    + ", Humidity: " + String(bme.readHumidity()) + " %"
+    + ", Pressure: " + String(bme.readPressure()) + " hp"
+    +  "}", 60, PRIVATE );
+}
 
 void TrackUpdate() {
+
   if (tracking) {
-    Spark.publish("SYS", "Tracking", 60, PRIVATE);
+    noInterrupts();
     File trackLog = SD.open("trackLog.log", FILE_WRITE);
     if (trackLog) {
       // Timestamp
@@ -137,13 +158,31 @@ void TrackUpdate() {
       trackLog.print(bme.readHumidity()); trackLog.print(';');
       trackLog.print(bme.readPressure()); trackLog.println(';');
       trackLog.close();
+      interrupts();
     }
   }
 }
 
+// Event Handling
+// single click: pause tracking
+// double click: tracking on / off
+//               off -> on: start new track
+//               on -> off: save track
+// long Click: connect to cloud service if possible
+void singleClickHandler() {
+    //track = !track;
+}
+void doubleClickHandler() {
+}
+void longClickHandler() {
+}
+
+// Cloud functions
+void StartTracking() { }
+void StopTracking() { }
+void GoSleep() { }
+
 // Utils
-
-
 //http://arduinodev.woofex.net/2013/02/06/adafruit_gps_forma/
 double convertDegMinToDecDeg (float degMin) {
   double min = 0.0;
