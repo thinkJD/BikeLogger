@@ -15,10 +15,11 @@ WlanHandler wlan_handler(0);
 Adafruit_BME280 bme;  // i2c hardware port
 
 // GPS
-#define mySerial Serial1
 #define APP_VERSION 10
 #define GPSECHO  false  // Serial echo of raw gps data ... slow
-Adafruit_GPS GPS(&mySerial);
+#define GPS_ENABLE D5
+#define GPS_FIXSIGNAL D4
+Adafruit_GPS GPS(100);
 
 // SD Card
 const uint8_t chipSelect = A2;
@@ -30,19 +31,33 @@ char dataString[100];
 char sdata[10];
 char logLine[300];
 
-// start tracking
-void click()
-{
-	Serial.println("Click event");
-	wlan_handler.start_ap_scan();
-}
-
-// try cloud connect
-void doubleclick() {
+void printEnvironmentalSensorData() {
 	Serial.println("Double Click");
 	Serial.println("Temperature:" + String(bme.readTemperature()) + " *C");
 	Serial.println("Humidity:" + String(bme.readHumidity()) + " %");
 	Serial.println("Pressure:" + String(bme.readPressure()) + " hp");
+}
+
+void printGpsLastNema() {
+	if (GPS.fix) {
+		Serial.print("Fix Quality: ");
+		Serial.println(GPS.fixquality);
+		Serial.print("Sattelites: ");
+		Serial.println(GPS.satellites);
+	}
+	else {
+		Serial.println("No GPS fix");
+	}
+}
+
+void click() {
+	Serial.println("Click event");
+	wlan_handler.start_ap_scan();
+}
+
+void doubleclick() {
+	printEnvironmentalSensorData();
+	printGpsLastNema();
 }
 
 // Enter DFU mode. DFU mode is active until system reset
@@ -66,18 +81,27 @@ void setup() {
 	else Serial.println("SD Card failed or not present");
 
 	// Setup GPS Module
-	GPS.begin(9600);  // Initialize GPS lib
-	mySerial.begin(9600);  // Hardware serial port
+	pinMode(GPS_ENABLE, OUTPUT);
+	digitalWrite(GPS_ENABLE, HIGH);  // enable GPS Module
+	Serial1.begin(9600);  // Initialize hw serial
 	GPS.sendCommand(PMTK_SET_NMEA_OUTPUT_RMCGGA);  // RMC and GGA Data
 	GPS.sendCommand(PMTK_SET_NMEA_UPDATE_1HZ);   // 1 Hz update rate
 	GPS.sendCommand(PGCMD_NOANTENNA);  // no updates about the antenna status
 	delay(1000);  // some init time for the gps chipset
-	mySerial.println(PMTK_Q_RELEASE);  // Ask for firmware version
+	Serial.println("GPS initialized");
 
-	// init all the other stuff
+	// all the other stuff
 	button.attachDoubleClick(doubleclick);
 	button.attachClick(click);
 	button.attachPress(press);
+}
+
+// called from application loot if serial data in buffer
+void serialEvent1() {
+	char c = Serial1.read();
+  GPS.newChar(c);
+  // debug
+  //Serial.print(c);
 }
 
 void loop() {
@@ -85,7 +109,9 @@ void loop() {
 	wlan_handler.tick();
 
 	// Get and parse last GPS sentence. If it fails, wait for the next one
-	while (mySerial.available() > 0) char c = GPS.read();
-	if (GPS.newNMEAreceived())
-		if (!GPS.parse(GPS.lastNMEA())) return;
+	if (GPS.newNMEAreceived()) {
+		if (!GPS.parse(GPS.lastNMEA())) {
+			printGpsLastNema();
+		}
+	}
 }

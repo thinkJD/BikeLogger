@@ -17,13 +17,7 @@ All text above must be included in any redistribution
 #ifndef _ADAFRUIT_GPS_H
 #define _ADAFRUIT_GPS_H
 
-#ifdef __AVR__
-  #if ARDUINO >= 100
-    #include <SoftwareSerial.h>
-  #else
-    #include <NewSoftSerial.h>
-  #endif
-#endif
+#include "application.h"
 
 // different commands to set the update rate from once a second (1 Hz) to 10 times a second (10Hz)
 #define PMTK_SET_NMEA_UPDATE_1HZ  "$PMTK220,1000*1F"
@@ -43,16 +37,6 @@ All text above must be included in any redistribution
 // turn off output
 #define PMTK_SET_NMEA_OUTPUT_OFF "$PMTK314,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0*28"
 
-// to generate your own sentences, check out the MTK command datasheet and use a checksum calculator
-// such as the awesome http://www.hhhh.org/wiml/proj/nmeaxor.html
-
-#define PMTK_LOCUS_STARTLOG  "$PMTK185,0*22"
-#define PMTK_LOCUS_LOGSTARTED "$PMTK001,185,3*3C"
-#define PMTK_LOCUS_QUERY_STATUS "$PMTK183*38"
-#define PMTK_LOCUS_ERASE_FLASH "$PMTK184,1*22"
-#define LOCUS_OVERLAP 0
-#define LOCUS_FULLSTOP 1
-
 // standby command & boot successful message
 #define PMTK_STANDBY "$PMTK161,0*28"
 #define PMTK_STANDBY_SUCCESS "$PMTK001,161,3*36"  // Not needed currently
@@ -68,44 +52,22 @@ All text above must be included in any redistribution
 // how long to wait when we're looking for a response
 #define MAXWAITSENTENCE 5
 
-// #if ARDUINO >= 100
-//  #include "Arduino.h"
-// #if defined (__AVR__) && !defined(__AVR_ATmega32U4__)
-//  #include "SoftwareSerial.h"
-// #endif
-// #else
-//  #include "WProgram.h"
-//  #include "NewSoftSerial.h"
-// #endif
-
-#include "application.h"
 
 
 class Adafruit_GPS {
  public:
-  void begin(uint16_t baud);
-
-// #ifdef __AVR__
-//   #if ARDUINO >= 100
-//     Adafruit_GPS(SoftwareSerial *ser); // Constructor when using SoftwareSerial
-//   #else
-//     Adafruit_GPS(Serial  *ser); // Constructor when using NewSoftSerial
-//   #endif
-// #endif
-  Adafruit_GPS(Stream *ser); // Constructor when using HardwareSerial
+  Adafruit_GPS(char a); // Constructor when using HardwareSerial
 
   char *lastNMEA(void);
   boolean newNMEAreceived();
-  void common_init(void);
   void sendCommand(char *);
   void pause(boolean b);
 
   boolean parseNMEA(char *response);
   uint8_t parseHex(char c);
 
-  char read(void);
+  char newChar(char c);
   boolean parse(char *);
-  void interruptReads(boolean r);
 
   boolean wakeup(void);
   boolean standby(void);
@@ -119,22 +81,11 @@ class Adafruit_GPS {
   uint8_t fixquality, satellites;
 
   boolean waitForSentence(char *wait, uint8_t max = MAXWAITSENTENCE);
-  boolean LOCUS_StartLogger(void);
-  boolean LOCUS_ReadStatus(void);
 
-  uint16_t LOCUS_serial, LOCUS_records;
-  uint8_t LOCUS_type, LOCUS_mode, LOCUS_config, LOCUS_interval, LOCUS_distance, LOCUS_speed, LOCUS_status, LOCUS_percent;
  private:
   boolean paused;
 
   uint8_t parseResponse(char *response);
-// #ifdef __AVR__
-//   #if ARDUINO >= 100
-//     SoftwareSerial *gpsSwSerial;
-//   #else
-//     NewSoftSerial  *gpsSwSerial;
-//   #endif
-// #endif
   Stream *gpsHwSerial;
 };
 
