@@ -2,6 +2,7 @@
 #define TrackHandler_h
 
 #include "application.h"
+#include "GPS.h"
 
 extern "C" {
   typedef void (*callbackFunction)(void);

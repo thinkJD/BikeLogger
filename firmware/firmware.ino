@@ -32,10 +32,10 @@ char sdata[10];
 char logLine[300];
 
 void printEnvironmentalSensorData() {
-	Serial.println("Double Click");
-	Serial.println("Temperature:" + String(bme.readTemperature()) + " *C");
-	Serial.println("Humidity:" + String(bme.readHumidity()) + " %");
-	Serial.println("Pressure:" + String(bme.readPressure()) + " hp");
+	_debugWriteLine("Double Click");
+  _debugWriteLine("Temperature: " + String(bme.readTemperature()) + " *C");
+	_debugWriteLine("Humidity: " + String(bme.readHumidity()) + " %");
+	_debugWriteLine("Pressure: " + String(bme.readPressure()) + " hp");
 }
 
 void printGpsLastNema() {
@@ -52,7 +52,8 @@ void printGpsLastNema() {
 
 void click() {
 	Serial.println("Click event");
-	wlan_handler.start_ap_scan();
+	//wlan_handler.start_ap_scan();
+	wlan_handler.startCloudConnect();
 }
 
 void doubleclick() {
@@ -65,6 +66,13 @@ void press() {
 	Serial.println("System: Enter DFU mode");
 	delay(200);
 	System.dfu(true);
+}
+
+void _debugWriteLine(String Line) {
+	if (wlan_handler.cloudConnected) {
+		Particle.publish("Debug", "Main: " + Line);
+	}
+	Serial.println("Main: " + Line);
 }
 
 void setup() {
@@ -101,14 +109,15 @@ void serialEvent1() {
 	char c = Serial1.read();
   GPS.newChar(c);
   // debug
-  //Serial.print(c);
+	//Serial.print(c);
 }
 
 void loop() {
   button.tick();
 	wlan_handler.tick();
 
-	// Get and parse last GPS sentence. If it fails, wait for the next one
+
+	// Get and parse last GPS sentence.
 	if (GPS.newNMEAreceived()) {
 		if (!GPS.parse(GPS.lastNMEA())) {
 			printGpsLastNema();
