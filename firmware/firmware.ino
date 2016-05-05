@@ -32,21 +32,23 @@ char sdata[10];
 char logLine[300];
 
 void printEnvironmentalSensorData() {
-	_debugWriteLine("Double Click");
   _debugWriteLine("Temperature: " + String(bme.readTemperature()) + " *C");
 	_debugWriteLine("Humidity: " + String(bme.readHumidity()) + " %");
 	_debugWriteLine("Pressure: " + String(bme.readPressure()) + " hp");
 }
 
 void printGpsLastNema() {
+	_debugWriteLine("Fix Quality: " + String(GPS.fixquality));
+  _debugWriteLine("Time: " + String(GPS.hour) +  ':' + String(GPS.minute) + ':' + String(GPS.seconds) + '.' + String(GPS.milliseconds));
+  _debugWriteLine("Date: " + GPS.day + '.' + GPS.month + '.' + String(GPS.year));
+	_debugWriteLine("Fix: " + String(GPS.fix) + "Quality: " + String(GPS.fixquality)); 
 	if (GPS.fix) {
-		Serial.print("Fix Quality: ");
-		Serial.println(GPS.fixquality);
-		Serial.print("Sattelites: ");
-		Serial.println(GPS.satellites);
+		_debugWriteLine("Sattelites: " + String(GPS.satellites));
+		_debugWriteLine("Location: " + String(GPS.latitude) + String(GPS.lat) + ", " + String(GPS.longitude) + String(GPS.lon));
+		_debugWriteLine("Speed (knots): " + String(GPS.speed) + " Altitude: " + String(GPS.altitude));
 	}
 	else {
-		Serial.println("No GPS fix");
+		_debugWriteLine("No GPS fix");
 	}
 }
 
