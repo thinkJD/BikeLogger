@@ -26,10 +26,19 @@ const uint8_t chipSelect = A2;
 const uint8_t mosiPin = A5;
 const uint8_t misoPin = A4;
 const uint8_t clockPin = A3;
+File myFile;
 
 char dataString[100];
 char sdata[10];
 char logLine[300];
+
+// called from application loot if serial data in buffer
+void serialEvent1() {
+	char c = Serial1.read();
+  GPS.newChar(c);
+  // debug
+	//Serial.print(c);
+}
 
 void printEnvironmentalSensorData() {
   _debugWriteLine("Temperature: " + String(bme.readTemperature()) + " *C");
@@ -77,6 +86,42 @@ void _debugWriteLine(String Line) {
 	Serial.println("Main: " + Line);
 }
 
+void _readFromSD() {
+  // re-open the file for reading:
+  myFile = SD.open("test.txt");
+  if (myFile) {
+    Serial.println("test.txt:");
+
+    // read from the file until there's nothing else in it:
+    while (myFile.available()) {
+      Serial.write(myFile.read());
+    }
+    // close the file:
+    myFile.close();
+  } else {
+    // if the file didn't open, print an error:
+    Serial.println("error opening test.txt");
+  }
+}
+
+void _writeToSd() {
+  // open the file. note that only one file can be open at a time,
+  // so you have to close this one before opening another.
+  myFile = SD.open("test.txt", FILE_WRITE);
+
+  // if the file opened okay, write to it:
+  if (myFile) {
+    Serial.print("Writing to test.txt...");
+    myFile.println("testing 1, 2, 3.");
+    // close the file:
+    myFile.close();
+    Serial.println("done.");
+  } else {
+    // if the file didn't open, print an error:
+    Serial.println("error opening test.txt");
+  }
+}
+
 void setup() {
   Serial.begin(9600);
   delay(2000);
@@ -106,14 +151,6 @@ void setup() {
 	button.attachPress(press);
 }
 
-// called from application loot if serial data in buffer
-void serialEvent1() {
-	char c = Serial1.read();
-  GPS.newChar(c);
-  // debug
-	//Serial.print(c);
-}
-
 void loop() {
   button.tick();
 	wlan_handler.tick();
@@ -122,7 +159,7 @@ void loop() {
 	// Get and parse last GPS sentence.
 	if (GPS.newNMEAreceived()) {
 		if (!GPS.parse(GPS.lastNMEA())) {
-			printGpsLastNema();
+			//printGpsLastNema();
 		}
 	}
 }
