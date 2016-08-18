@@ -4,6 +4,7 @@
 #include "Adafruit_Sensor.h"
 #include "Adafruit_BME280.h"
 #include "WlanHandler.h"
+#include "TrackHandler.h"
 #include "SD.h"
 #include <math.h>
 #include "Adafruit_GPS.h"
@@ -13,6 +14,7 @@ SYSTEM_MODE(MANUAL);  // allows controll over the cloud functions
 OneButton button(D7, true);
 WlanHandler wlan_handler(0);
 Adafruit_BME280 bme;  // i2c hardware port
+TrackHandler track_handler = TrackHandler();
 
 // GPS
 #define APP_VERSION 10
@@ -20,13 +22,6 @@ Adafruit_BME280 bme;  // i2c hardware port
 #define GPS_ENABLE D5
 #define GPS_FIXSIGNAL D4
 Adafruit_GPS GPS(100);
-
-// SD Card
-const uint8_t chipSelect = A2;
-const uint8_t mosiPin = A5;
-const uint8_t misoPin = A4;
-const uint8_t clockPin = A3;
-File myFile;
 
 char dataString[100];
 char sdata[10];
@@ -131,10 +126,6 @@ void setup() {
 	if (bme.begin()) Serial.println("Env Sensor initialized");
  	else Serial.println("Env Sensor not found");
 
-	// Setup SD Card
-	if (SD.begin(chipSelect)) Serial.println("SD Card initialized");
-	else Serial.println("SD Card failed or not present");
-
 	// Setup GPS Module
 	pinMode(GPS_ENABLE, OUTPUT);
 	digitalWrite(GPS_ENABLE, HIGH);  // enable GPS Module
@@ -144,6 +135,8 @@ void setup() {
 	GPS.sendCommand(PGCMD_NOANTENNA);  // no updates about the antenna status
 	delay(1000);  // some init time for the gps chipset
 	Serial.println("GPS initialized");
+
+	track_handler.test_sd();
 
 	// all the other stuff
 	button.attachDoubleClick(doubleclick);

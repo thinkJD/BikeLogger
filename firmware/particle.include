@@ -20,5 +20,7 @@ libs/SD/SdInfo.h
 libs/GPS/Adafruit_GPS.cpp
 utils/WlanHandler.h
 utils/WlanHandler.cpp
+utils/TrackHandler.h
+utils/TrackHandler.cpp
 gps.c
 firmware.ino
