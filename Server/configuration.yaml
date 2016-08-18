@@ -1,3 +1,10 @@
 tcp_server:
   host: localhost
   port: 11100
+
+particle_io:
+  access_token: ae63704ab514f24a9d54f5dab948f0f6248d58a3
+
+proxies:
+  http: http://192.168.150.153:8080
+  https: https://192.168.150.153:8080
