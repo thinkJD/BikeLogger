@@ -1,11 +1,18 @@
 #include "TrackHandler.h"
 
-TrackHandler::TrackHandler(int state) {
+
+TrackHandler::TrackHandler() {
 	_state = 0;
 	_timestamp = millis();
 }
 
-TrackHandler::Tick(void) {
+void TrackHandler::test_sd(void) {
+	// Setup SD Card
+	if (SD.begin(chipSelect)) Serial.println("SD Card initialized");
+	else Serial.println("SD Card failed or not present");
+}
+
+void TrackHandler::tick(void) {
 	switch (_state) {
 
 		case 0:
@@ -16,11 +23,11 @@ TrackHandler::Tick(void) {
 	}
 }
 
-TrackHandler::startNewTrack(void) {
+void TrackHandler::startNewTrack(void) {
 	return;
 }
 
-TrackHandler::finishTrack(void) {
+void TrackHandler::finishTrack(void) {
 	return;
 }
 
