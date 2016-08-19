@@ -1,3 +1,5 @@
+# {base_path} will be replaced with application base path
+
 tcp_server:
   host: localhost
   port: 11100
@@ -8,3 +10,11 @@ particle_io:
 proxies:
   http: http://192.168.150.153:8080
   https: https://192.168.150.153:8080
+
+flask:
+  WTF_CSRF_ENABLED: True
+  SECRET_KEY: 2cVkwR1IjeMJjZhepkNc
+
+database:
+  SQLALCHEMY_DATABASE_URI: 'sqlite:///{base_path}app.db'
+  SQLALCHEMY_MIGRATE_REPO: '{base_path}db_repository'
