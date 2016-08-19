@@ -1,8 +1,7 @@
-#ifndef TrackHandler_h
-#define TrackHandler_h
+#ifndef GpsHandler_h
+#define GpsHandler_h
 
 #include "application.h"
-#include "SD.h"
 
 // SD Card
 const uint8_t chipSelect = A2;
