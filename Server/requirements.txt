@@ -1,0 +1,16 @@
+yaml
+migrate
+Flask==0.11.1
+Flask-WTF==0.12
+Jinja2==2.8
+MarkupSafe==0.23
+PyYAM==3.11
+WTForms==2.1
+Werkzeug==0.11.10
+click==6.6
+hammock==0.2.4
+itsdangerous==0.24
+requests==2.11.0
+setuptools==20.10.1
+six==1.10.0
+sseclient==0.0.12
