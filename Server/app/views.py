@@ -1,9 +1,12 @@
 from flask import render_template, flash, redirect, session, url_for, request, g
 from flask_login import login_user, logout_user, current_user, login_required
-from app import app, db, lm, oid
-from .forms import LoginForm
+from app import app, db, lm
+from .forms import LoginForm, SyncForm
 from .models import User
 
+print('Test Database Connection')
+usr = User.query.all()
+print(usr)
 
 @app.route('/')
 @app.route('/index')
@@ -27,41 +30,38 @@ def index():
 
 
 @app.route('/login', methods=['GET', 'POST'])
-@oid.loginhandler
 def login():
+    # user is already logged in
     if g.user is not None and g.user.is_authenticated:
         return redirect(url_for('index'))
-    form = LoginForm()
-    if form.validate_on_submit():
-        session['remember_me'] = form.remember_me.data
-        return oid.try_login(form.openid.data, ask_for=['nickname', 'email'])
+
+    # if not, render login view
+    login_form = LoginForm()
+    if login_form.validate_on_submit():
+        session['remember_me'] = login_form.remember_me.data
+        if login_form.password is None or "":
+            # todo error password
+            pass
+        if not login_form.email:
+            # todo error mail
+            pass
+        login_user(g.user, True)
+        return redirect(url_for('index'))
+
     return render_template('login.html',
                            title='Sign In',
-                           form=form,
-                           providers=app.config['OPENID_PROVIDERS'])
+                           form=login_form)
 
-
-@oid.after_login
-def after_login(resp):
-    if resp.email is None or resp.email == "":
-        flash('Invalid login. Please try again.')
-        return redirect(url_for('login'))
-
-    user = User.query.filter_by(email=resp.email).first()
-    if user is None:
-        nickname = resp.nickname
-        if nickname is None or nickname == "":
-            nickname = resp.email.split('@')[0]
-        user = User(nickname=nickname, email=resp.email)
-        db.session.add(user)
-        db.session.commit()
-
-    remember_me = False
-    if 'remember_me' in session:
-        remember_me = session['remember_me']
-        session.pop('remember_me', None)
-    login_user(user, remember=remember_me)
-    return redirect(request.args.get('next') or url_for('index'))
+@app.route('/sync', methods=['GET', 'POST'])
+@login_required
+def sync():
+    # todo check user login
+    sync_form = SyncForm()
+    if sync_form.validate_on_submit():
+        print('Start Sync!')
+    return render_template('sync.html',
+                           title='Sync',
+                           form=sync_form)
 
 
 @app.before_request
@@ -72,3 +72,8 @@ def before_request():
 @lm.user_loader
 def load_user(id):
     return User.query.get(int(id))
+
+
+@lm.request_loader
+def load_user_from_request(request):
+    return  User.query.get(str(1))

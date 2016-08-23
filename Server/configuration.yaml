@@ -1,5 +1,3 @@
-# {base_path} will be replaced with application base path
-
 tcp_server:
   host: localhost
   port: 11100
@@ -14,14 +12,9 @@ proxies:
 flask:
   WTF_CSRF_ENABLED: True
   SECRET_KEY: 2cVkwR1IjeMJjZhepkNc
-  TMP_PATH: 'C:\Temp'
-  OPENID_PROVIDERS: [
-    {'name': 'CloudId', 'url': 'https://www.cloudid.de/p/<username>'},
-    {'name': 'Yahoo', 'url': 'https://me.yahoo.com'},
-    {'name': 'AOL', 'url': 'http://openid.aol.com/<username>'},
-    {'name': 'Flickr', 'url': 'http://www.flickr.com/<username>'},
-    {'name': 'MyOpenID', 'url': 'https://www.myopenid.com'}]
 
 database:
   SQLALCHEMY_DATABASE_URI: 'sqlite:///{base_path}app.db'
   SQLALCHEMY_MIGRATE_REPO: '{base_path}db_repository'
+
+
