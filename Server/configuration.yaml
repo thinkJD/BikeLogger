@@ -1,3 +1,6 @@
+# you can use the following aliases
+# * {base_path} = application base path
+
 tcp_server:
   host: localhost
   port: 11100
@@ -16,5 +19,6 @@ flask:
 database:
   SQLALCHEMY_DATABASE_URI: 'sqlite:///{base_path}app.db'
   SQLALCHEMY_MIGRATE_REPO: '{base_path}db_repository'
+  SQLALCHEMY_TRACK_MODIFICATIONS: True
 
 

@@ -4,9 +4,6 @@ from app import app, db, lm
 from .forms import LoginForm, SyncForm
 from .models import User
 
-print('Test Database Connection')
-usr = User.query.all()
-print(usr)
 
 @app.route('/')
 @app.route('/index')
@@ -39,14 +36,12 @@ def login():
     login_form = LoginForm()
     if login_form.validate_on_submit():
         session['remember_me'] = login_form.remember_me.data
-        if login_form.password is None or "":
-            # todo error password
-            pass
-        if not login_form.email:
-            # todo error mail
-            pass
-        login_user(g.user, True)
-        return redirect(url_for('index'))
+        usr = User.query.filter_by(email=login_form.email.data).first()
+        if usr:
+            login_user(usr, True)
+            return redirect(url_for('index'))
+        else:
+            flash('User not found')
 
     return render_template('login.html',
                            title='Sign In',
@@ -63,17 +58,18 @@ def sync():
                            title='Sync',
                            form=sync_form)
 
+@app.route('/logout')
+def logout():
+    logout_user()
+    return redirect(url_for('index'))
 
 @app.before_request
 def before_request():
     g.user = current_user
-
 
 @lm.user_loader
 def load_user(id):
     return User.query.get(int(id))
 
 
-@lm.request_loader
-def load_user_from_request(request):
-    return  User.query.get(str(1))
+

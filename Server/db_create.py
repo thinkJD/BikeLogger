@@ -1,11 +1,11 @@
 from migrate.versioning import api
-import load_configuration
+from config_loader import config
 import os
 from app import db
 
-cfg = load_configuration.get_config()
-SQLALCHEMY_DATABASE_URI = cfg['database']['SQLALCHEMY_DATABASE_URI']
-SQLALCHEMY_MIGRATE_REPO = cfg['database']['SQLALCHEMY_MIGRATE_REPO']
+
+SQLALCHEMY_DATABASE_URI = config['database']['SQLALCHEMY_DATABASE_URI']
+SQLALCHEMY_MIGRATE_REPO = config['database']['SQLALCHEMY_MIGRATE_REPO']
 
 db.create_all()
 if not os.path.exists(SQLALCHEMY_MIGRATE_REPO):

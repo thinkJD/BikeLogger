@@ -1,24 +1,13 @@
-import os
-import yaml
+from config_loader import config
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 
-# read configuration from yaml file
-# todo remove this section its already don in load_configuration
-with open('configuration.yaml', 'r') as config_file:
-    cfg = yaml.load(config_file)
-
-# do some string replace stuff
-for group in cfg.keys():
-    for setting in cfg[group].keys():
-        if '{base_path}' in str(cfg[group][setting]):
-            cfg[group][setting] = cfg[group][setting].replace('{base_path}', os.path.dirname(__file__) + '\\')
 
 # configure application
 app = Flask(__name__)
-app.config.update(cfg['flask'])
-app.config.update(cfg['database'])
+app.config.update(config['flask'])
+app.config.update(config['database'])
 
 db = SQLAlchemy(app)
 lm = LoginManager()
